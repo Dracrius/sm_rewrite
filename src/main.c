@@ -472,32 +472,50 @@ int main(int argc, char** argv) {
   uint32 frameCtr = 0;
   uint8 audiopaused = true;
   bool has_bug_in_title = false;
-
+   
   /* GUI */
   struct nk_context* ctx;
   struct nk_colorf bg;
   ctx = nk_sdl_init(g_window, g_renderer);
   /* Load Fonts: if none of these are loaded a default font will be used  */
   /* Load Cursor: if you uncomment cursor loading please hide the cursor */
-  {
-      struct nk_font_atlas* atlas;
-      struct nk_font_config config = nk_font_config(0);
-      struct nk_font* font;
+  
+      struct nk_font_atlas* default_atlas;
+      struct nk_font_config default_config = nk_font_config(0);
+      struct nk_font* default_font;
 
-      /* set up the font atlas and add desired font; note that font sizes are
-       * multiplied by font_scale to produce better results at higher DPIs */
-      nk_sdl_font_stash_begin(&atlas);
-      font = nk_font_atlas_add_default(atlas, 13, &config);
-      //font = nk_font_atlas_add_from_file(atlas, "../assets/fonts/sm-small-alt-colour.ttf", 14, &config);
-      /*font = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Roboto-Regular.ttf", 16 * font_scale, &config);*/
-      /*font = nk_font_atlas_add_from_file(atlas, "../../../extra_font/kenvector_future_thin.ttf", 13 * font_scale, &config);*/
-      /*font = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyClean.ttf", 12 * font_scale, &config);*/
-      /*font = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyTiny.ttf", 10 * font_scale, &config);*/
-      /*font = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Cousine-Regular.ttf", 13 * font_scale, &config);*/
+      default_config.pixel_snap = true;
+      default_config.oversample_h = 1;
+
+      struct nk_font_atlas* small_atlas;
+      struct nk_font_config small_config = nk_font_config(0);
+      struct nk_font* small_font;
+
+      small_config.pixel_snap = true;
+      small_config.oversample_h = 1;
+
+      struct nk_font_atlas* large_atlas;
+      struct nk_font_config large_config = nk_font_config(0);
+      struct nk_font* large_font;
+
+      large_config.pixel_snap = true;
+      large_config.oversample_h = 1;
+
+      nk_sdl_font_stash_begin(&default_atlas);
+      default_font = nk_font_atlas_add_default(default_atlas, 13, &default_config);
       nk_sdl_font_stash_end();
+
+      nk_sdl_font_stash_begin(&small_atlas);
+      small_font = nk_font_atlas_add_from_file(small_atlas, "assets/fonts/sm-snes.ttf", 7, &small_config);
+      nk_sdl_font_stash_end();
+
+      nk_sdl_font_stash_begin(&large_atlas);
+      large_font = nk_font_atlas_add_from_file(large_atlas, "assets/fonts/sm-large-alt.ttf", 14, &large_config);
+      nk_sdl_font_stash_end();
+
       /*nk_style_load_all_cursors(ctx, atlas->cursors);*/
-      nk_style_set_font(ctx, &font->handle);
-  }
+      nk_style_set_font(ctx, &small_font->handle);
+  
 
   while (running) {
     SDL_Event event;
@@ -553,35 +571,36 @@ int main(int argc, char** argv) {
 
     if (g_paused) {
         /* GUI */
-        if (nk_begin(ctx, "Paused", nk_rect(48, 62, 160, 100), NK_WINDOW_BACKGROUND))
+        if (nk_begin(ctx, "Paused_List", nk_rect(48, 74, 160, 100), NK_WINDOW_BACKGROUND))
         {
-            enum { EASY, HARD };
-            static int op = EASY;
-            static int property = 20;
+            nk_layout_row_dynamic(ctx, 15, 1);
+            nk_style_set_font(ctx, &small_font->handle);
+            nk_label(ctx, "Resume", NK_TEXT_CENTERED);
+            nk_label(ctx, "General", NK_TEXT_CENTERED);
+            nk_label(ctx, "Graphics", NK_TEXT_CENTERED);
+            nk_label(ctx, "Sound", NK_TEXT_CENTERED);
+            nk_label(ctx, "Features", NK_TEXT_CENTERED);
+            nk_label(ctx, "Save + Load", NK_TEXT_CENTERED);
+            nk_label(ctx, "Reset", NK_TEXT_CENTERED);
+            nk_label(ctx, "Quit", NK_TEXT_CENTERED);
+            /*nk_layout_row_dynamic(ctx, 40, 1);
+            static float font_size = 6;
+            nk_property_float(ctx, "Font size:", 0, &font_size, 100, 0.01, 0.01);
 
-            nk_layout_row_dynamic(ctx, 30, 1);
-            nk_label(ctx, "Paused", NK_TEXT_CENTERED);
-            if (nk_button_label(ctx, "button"))
-                fprintf(stdout, "button pressed\n");
-            nk_layout_row_dynamic(ctx, 30, 2);
-            if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
-            if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
-            nk_layout_row_dynamic(ctx, 25, 1);
-            nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
+            nk_sdl_font_stash_begin(&default_atlas);
+            default_font = nk_font_atlas_add_default(default_atlas, font_size, &default_config);
+            nk_sdl_font_stash_end();
 
             nk_layout_row_dynamic(ctx, 20, 1);
-            nk_label(ctx, "background:", NK_TEXT_LEFT);
-            nk_layout_row_dynamic(ctx, 25, 1);
-            if (nk_combo_begin_color(ctx, nk_rgb_cf(bg), nk_vec2(nk_widget_width(ctx), 400))) {
-                nk_layout_row_dynamic(ctx, 120, 1);
-                bg = nk_color_picker(ctx, bg, NK_RGBA);
-                nk_layout_row_dynamic(ctx, 25, 1);
-                bg.r = nk_propertyf(ctx, "#R:", 0, bg.r, 1.0f, 0.01f, 0.005f);
-                bg.g = nk_propertyf(ctx, "#G:", 0, bg.g, 1.0f, 0.01f, 0.005f);
-                bg.b = nk_propertyf(ctx, "#B:", 0, bg.b, 1.0f, 0.01f, 0.005f);
-                bg.a = nk_propertyf(ctx, "#A:", 0, bg.a, 1.0f, 0.01f, 0.005f);
-                nk_combo_end(ctx);
-            }
+            nk_label(ctx, "ASCII only Test string... @ # ! $", NK_TEXT_LEFT);*/
+        }
+        nk_end(ctx);
+
+        nk_style_set_font(ctx, &large_font->handle);
+        if (nk_begin(ctx, "Paused", nk_rect(48, 50, 160, 100), NK_WINDOW_BACKGROUND))
+        {
+            nk_layout_row_dynamic(ctx, 15, 1);
+            nk_label(ctx, "Paused", NK_TEXT_CENTERED);
         }
         nk_end(ctx);
 
@@ -591,7 +610,7 @@ int main(int argc, char** argv) {
         nk_sdl_render(NK_ANTI_ALIASING_ON);
 
         SDL_RenderPresent(g_renderer);
-      SDL_Delay(16);
+      //SDL_Delay(16);
       continue;
     }
 
