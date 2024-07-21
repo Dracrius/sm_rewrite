@@ -324,7 +324,349 @@ static const struct RendererFuncs kSdlRendererFuncs = {
   &SdlRenderer_EndDraw,
 };
 
+/* GUI */
+struct nk_context* ctx;
+struct nk_colorf bg;
 
+struct nk_font_atlas* default_atlas;
+struct nk_font_config default_config;
+struct nk_font* default_font;
+
+struct nk_font_atlas* small_atlas;
+struct nk_font* small_font;
+
+struct nk_font_atlas* large_atlas;
+struct nk_font* large_font;
+
+enum nkMenuOptions
+{
+    menuRoot,
+    menuGeneral,
+    menuGraphics,
+    menuSound,
+    menuFeatures,
+    menuSaveLoad,
+    menuQuit
+};
+
+bool ammoRechargeStation;
+bool shinesparkControl;
+bool shinesparkHealth;
+bool chainSpark;
+bool powerBombReveal;
+bool instantPickups;
+int saveSlotSelected = 0;
+
+enum nkMenuOptions currentMenu = menuRoot;
+
+static void nkFontSetup()
+{
+    default_config = nk_font_config(0);
+    default_config.pixel_snap = true;
+    default_config.oversample_h = 1;
+
+    nk_sdl_font_stash_begin(&default_atlas);
+    default_font = nk_font_atlas_add_default(default_atlas, 13, &default_config);
+    nk_sdl_font_stash_end();
+
+    nk_sdl_font_stash_begin(&small_atlas);
+    small_font = nk_font_atlas_add_from_file(small_atlas, "assets/fonts/sm-snes.ttf", 7, &default_config);
+    nk_sdl_font_stash_end();
+
+    nk_sdl_font_stash_begin(&large_atlas);
+    large_font = nk_font_atlas_add_from_file(large_atlas, "assets/fonts/sm-large-alt.ttf", 14, &default_config);
+    nk_sdl_font_stash_end();
+}
+
+static void nkRootMenu(struct nk_context* ctx)
+{
+    if (nk_begin(ctx, "Paused_List", nk_rect(28, 74, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_style_set_font(ctx, &small_font->handle);
+        if (nk_button_label(ctx, "Resume", NK_TEXT_CENTERED)) {
+            g_paused = false;
+        };
+        if (nk_button_label(ctx, "General", NK_TEXT_CENTERED)) {
+            currentMenu = menuGeneral;
+        };
+        if (nk_button_label(ctx, "Graphics", NK_TEXT_CENTERED)) {
+            currentMenu = menuGraphics;
+        };
+        if (nk_button_label(ctx, "Sound", NK_TEXT_CENTERED)) {
+            currentMenu = menuSound;
+        };
+        if (nk_button_label(ctx, "Features", NK_TEXT_CENTERED)) {
+            currentMenu = menuFeatures;
+        };
+        if (nk_button_label(ctx, "Save + Load", NK_TEXT_CENTERED)) {
+            currentMenu = menuSaveLoad;
+        };
+        if (nk_button_label(ctx, "Reset", NK_TEXT_CENTERED)) {
+            RtlReset(1);
+            g_paused = false;
+        };
+        if (nk_button_label(ctx, "Quit", NK_TEXT_CENTERED)) {
+            currentMenu = menuQuit;
+        };
+    }
+    nk_end(ctx);
+
+    nk_style_set_font(ctx, &large_font->handle);
+    if (nk_begin(ctx, "Paused", nk_rect(28, 50, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_label(ctx, "Paused", NK_TEXT_CENTERED);
+    }
+    nk_end(ctx);
+}
+
+static void nkGeneralMenu(struct nk_context* ctx)
+{
+    int autosave = g_config.autosave;
+    int disableFrameDelay = g_config.disable_frame_delay;
+
+    if (nk_begin(ctx, "General_List", nk_rect(28, 74, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        bool madeSelection = false;
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_style_set_font(ctx, &small_font->handle);
+
+        if (nk_checkbox_label(ctx, "Autosave", &autosave)) { g_config.autosave = !g_config.autosave; }
+        if (nk_checkbox_label(ctx, "DisableFrameDelay", &disableFrameDelay)) { g_config.disable_frame_delay = !g_config.disable_frame_delay; }
+
+        if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+            currentMenu = menuRoot;
+        };
+    }
+    nk_end(ctx);
+
+    nk_style_set_font(ctx, &large_font->handle);
+    if (nk_begin(ctx, "General", nk_rect(28, 50, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_label(ctx, "General", NK_TEXT_CENTERED);
+    }
+    nk_end(ctx);
+}
+
+static void nkGraphicsMenu(struct nk_context* ctx)
+{
+    int fullscreen = g_config.fullscreen;
+    int window_scale = g_config.window_scale;
+    int extend_y = g_config.extend_y;
+    int new_renderer = g_config.new_renderer;
+    int enhanced_mode7 = g_config.enhanced_mode7;
+    int ignore_aspect_ratio = g_config.ignore_aspect_ratio;
+    int no_sprite_limits = g_config.no_sprite_limits;
+    int linear_filtering = g_config.linear_filtering;
+
+    if (nk_begin(ctx, "Graphics_List", nk_rect(28, 74, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_style_set_font(ctx, &small_font->handle);
+
+        nk_label(ctx, "Fullscreen", NK_TEXT_LEFT);
+        static const char* fullscreenOptions[] = { "Windowed","Fullscreen","Fullscreen Windowed" };
+        if (nk_combo_begin_label(ctx, fullscreenOptions[fullscreen], nk_vec2(nk_widget_width(ctx), 200))) {
+            nk_layout_row_dynamic(ctx, 15, 1);
+            for (int i = 0; i < 3; ++i)
+                if (nk_combo_item_label(ctx, fullscreenOptions[i], NK_TEXT_LEFT))
+                {
+                    g_config.fullscreen = i;
+                    fullscreen = i;
+                }
+            nk_combo_end(ctx);
+        }
+        nk_label(ctx, "WindowScale", NK_TEXT_LEFT);
+        static const char* scaleOptions[] = { "1x","2x","3x","4x","5x" };
+        if (nk_combo_begin_label(ctx, scaleOptions[window_scale - 1], nk_vec2(nk_widget_width(ctx), 200))) {
+            nk_layout_row_dynamic(ctx, 15, 1);
+            for (int i = 0; i < 5; ++i)
+                if (nk_combo_item_label(ctx, scaleOptions[i], NK_TEXT_LEFT))
+                {
+                    g_config.window_scale = i + 1;
+                    window_scale = i + 1;
+                }
+            nk_combo_end(ctx);
+        }
+        if (nk_checkbox_label(ctx, "ExtendedY", &extend_y)) { g_config.extend_y = !g_config.extend_y; }
+        if (nk_checkbox_label(ctx, "NewRenderer", &new_renderer)) { g_config.new_renderer = !g_config.new_renderer; }
+        if (nk_checkbox_label(ctx, "EnhancedMode7", &enhanced_mode7)) { g_config.enhanced_mode7 = !g_config.enhanced_mode7; }
+        if (nk_checkbox_label(ctx, "IgnoreAspectRatio", &ignore_aspect_ratio)) { g_config.ignore_aspect_ratio = !g_config.ignore_aspect_ratio; }
+        if (nk_checkbox_label(ctx, "NoSpriteLimits", &no_sprite_limits)) { g_config.no_sprite_limits = !g_config.no_sprite_limits; }
+        if (nk_checkbox_label(ctx, "LinearFiltering", &linear_filtering)) { g_config.linear_filtering = !g_config.linear_filtering; }
+
+        if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+            currentMenu = menuRoot;
+        };
+    }
+    nk_end(ctx);
+
+    nk_style_set_font(ctx, &large_font->handle);
+    if (nk_begin(ctx, "Graphics", nk_rect(28, 50, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_label(ctx, "Graphics", NK_TEXT_CENTERED);
+    }
+    nk_end(ctx);
+    }
+
+static void nkSoundMenu(struct nk_context* ctx)
+{
+    int enable_audio = g_config.enable_audio;
+    int audio_freq = g_config.audio_freq;
+    int audio_channels = g_config.audio_channels;
+    int audio_samples = g_config.audio_samples;
+    int enable_msu = g_config.enable_msu;
+
+    if (nk_begin(ctx, "Sound_List", nk_rect(28, 74, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_style_set_font(ctx, &small_font->handle);
+
+        if (nk_checkbox_label(ctx, "EnableAudio", &enable_audio)) { g_config.enable_audio = !g_config.enable_audio; }
+        /*nk_label(ctx, "AudioFreq", NK_TEXT_LEFT);
+        static const int freqOptions[] = { 48000,44100,32000,22050,11025};
+        if (nk_combo_begin_label(ctx, audio_freq, nk_vec2(nk_widget_width(ctx), 200))) {
+            nk_layout_row_dynamic(ctx, 15, 1);
+            for (int i = 0; i < 5; ++i)
+                if (nk_combo_item_label(ctx, freqOptions[i], NK_TEXT_LEFT))
+                {
+                    g_config.audio_freq = freqOptions[i];
+                    audio_freq = freqOptions[i];
+                }
+            nk_combo_end(ctx);
+        }*/
+        nk_label(ctx, "AudioChannels", NK_TEXT_LEFT);
+        static const char* channelsOptions[] = { "Mono","Stereo" };
+        if (nk_combo_begin_label(ctx, channelsOptions[audio_channels - 1], nk_vec2(nk_widget_width(ctx), 200))) {
+            nk_layout_row_dynamic(ctx, 15, 1);
+            for (int i = 0; i < 2; ++i)
+                if (nk_combo_item_label(ctx, channelsOptions[i], NK_TEXT_LEFT))
+                {
+                    g_config.audio_channels = i + 1;
+                    audio_channels = i + 1;
+                }
+            nk_combo_end(ctx);
+        }
+        /*nk_label(ctx, "AudioSamples", NK_TEXT_LEFT);
+        static const int samplesOptions[] = { 512,1024,2048,4096 };
+        if (nk_combo_begin_label(ctx, audio_samples, nk_vec2(nk_widget_width(ctx), 200))) {
+            nk_layout_row_dynamic(ctx, 15, 1);
+            for (int i = 0; i < 4; ++i)
+                if (nk_combo_item_label(ctx, samplesOptions[i], NK_TEXT_LEFT))
+                {
+                    g_config.fullscreen = samplesOptions[i];
+                    audio_samples = samplesOptions[i];
+                }
+            nk_combo_end(ctx);
+        }*/
+        if (nk_checkbox_label(ctx, "EnableMSU", &enable_msu)) { g_config.enable_msu = !g_config.enable_msu; }
+
+        if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+            currentMenu = menuRoot;
+        };
+}
+    nk_end(ctx);
+
+    nk_style_set_font(ctx, &large_font->handle);
+    if (nk_begin(ctx, "Sound", nk_rect(28, 50, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_label(ctx, "Sound", NK_TEXT_CENTERED);
+    }
+    nk_end(ctx);
+    }
+
+static bool ParseBoolBit(bool value, uint32* data, uint32 mask) {
+    *data = *data & ~mask | (!value ? mask : 0);
+    return true;
+}
+
+static void nkFeaturesMenu(struct nk_context* ctx)
+{
+    int ammoRechargeStation = enhanced_features0 & kFeatures0_AmmoRechargeStation;
+    int shinesparkControl = enhanced_features0 & kFeatures0_ShinesparkControl;
+    int shinesparkHealth = enhanced_features0 & kFeatures0_ShinesparkHealth;
+    int chainSpark = enhanced_features0 & kFeatures0_ChainSpark;
+    int powerBombReveal = enhanced_features0 & kFeatures0_PowerBombReveal;
+    int instantPickups = enhanced_features0 & kFeatures0_InstantPickups;
+
+    if (nk_begin(ctx, "Features_List", nk_rect(28, 74, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_style_set_font(ctx, &small_font->handle);
+
+        if (nk_checkbox_label(ctx, "AmmoRechargeStation", &ammoRechargeStation)) { enhanced_features0 ^= kFeatures0_AmmoRechargeStation; }
+        if (nk_checkbox_label(ctx, "ShinesparkControl", &shinesparkControl)) { enhanced_features0 ^= kFeatures0_ShinesparkControl; }
+        if (nk_checkbox_label(ctx, "ShinesparkHealth", &shinesparkHealth)) { enhanced_features0 ^= kFeatures0_ShinesparkHealth; }
+        if (nk_checkbox_label(ctx, "ChainSpark", &chainSpark)) { enhanced_features0 ^= kFeatures0_ChainSpark; }
+        nk_layout_row_dynamic(ctx, 15, 2);
+        nk_label(ctx, "LowHealthBeep", NK_TEXT_ALIGN_LEFT);
+        nk_slider_int(ctx, 0, &g_config.low_beep, 100, 1);
+        nk_layout_row_dynamic(ctx, 15, 1);
+        if (nk_checkbox_label(ctx, "PowerBombReveal", &powerBombReveal)) { enhanced_features0 ^= kFeatures0_PowerBombReveal; }
+        if (nk_checkbox_label(ctx, "InstantPickups", &instantPickups)) { enhanced_features0 ^= kFeatures0_InstantPickups; }
+        
+        if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+            currentMenu = menuRoot;
+        };
+    }
+    nk_end(ctx);
+
+    nk_style_set_font(ctx, &large_font->handle);
+    if (nk_begin(ctx, "Features", nk_rect(28, 50, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_label(ctx, "Features", NK_TEXT_CENTERED);
+    }
+    nk_end(ctx);
+
+    //puts(enhanced_features0 & kFeatures0_InstantPickups ? "1" : "0");
+}
+
+static void nkSaveLoadMenu(struct nk_context* ctx)
+{
+    if (nk_begin(ctx, "SaveLoad_List", nk_rect(28, 74, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_style_set_font(ctx, &small_font->handle);
+
+        nk_label(ctx, "Save Slot", NK_TEXT_CENTERED);
+        static const char* slotOptions[] = { "Slot 0","Slot 1","Slot 2","Slot 3","Slot 4","Slot 5","Slot 6","Slot 7","Slot 8","Slot 9" };
+        if (nk_combo_begin_label(ctx, slotOptions[saveSlotSelected], nk_vec2(nk_widget_width(ctx), 200))) {
+            nk_layout_row_dynamic(ctx, 15, 1);
+            for (int i = 0; i < 10; ++i)
+                if (nk_combo_item_label(ctx, slotOptions[i], NK_TEXT_LEFT))
+                {
+                    saveSlotSelected = i;
+                }
+            nk_combo_end(ctx);
+        }
+        if (nk_button_label(ctx, "Save", NK_TEXT_CENTERED)) {
+            HandleCommand(kKeys_Save + saveSlotSelected, true);
+        };
+        if (nk_button_label(ctx, "Load", NK_TEXT_CENTERED)) {
+            HandleCommand(kKeys_Load + saveSlotSelected, true);
+        };
+        if (nk_button_label(ctx, "Replay", NK_TEXT_CENTERED)) {
+            HandleCommand(kKeys_Replay + saveSlotSelected, true);
+        };
+        if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+            currentMenu = menuRoot;
+        };
+    }
+    nk_end(ctx);
+
+    nk_style_set_font(ctx, &large_font->handle);
+    if (nk_begin(ctx, "SaveLoad", nk_rect(28, 50, 200, 100), NK_WINDOW_BACKGROUND))
+    {
+        nk_layout_row_dynamic(ctx, 15, 1);
+        nk_label(ctx, "Save + Load", NK_TEXT_CENTERED);
+    }
+    nk_end(ctx);
+}
 
 #undef main
 int main(int argc, char** argv) {
@@ -474,47 +816,10 @@ int main(int argc, char** argv) {
   bool has_bug_in_title = false;
    
   /* GUI */
-  struct nk_context* ctx;
-  struct nk_colorf bg;
   ctx = nk_sdl_init(g_window, g_renderer);
-  /* Load Fonts: if none of these are loaded a default font will be used  */
-  /* Load Cursor: if you uncomment cursor loading please hide the cursor */
-  
-      struct nk_font_atlas* default_atlas;
-      struct nk_font_config default_config = nk_font_config(0);
-      struct nk_font* default_font;
 
-      default_config.pixel_snap = true;
-      default_config.oversample_h = 1;
-
-      struct nk_font_atlas* small_atlas;
-      struct nk_font_config small_config = nk_font_config(0);
-      struct nk_font* small_font;
-
-      small_config.pixel_snap = true;
-      small_config.oversample_h = 1;
-
-      struct nk_font_atlas* large_atlas;
-      struct nk_font_config large_config = nk_font_config(0);
-      struct nk_font* large_font;
-
-      large_config.pixel_snap = true;
-      large_config.oversample_h = 1;
-
-      nk_sdl_font_stash_begin(&default_atlas);
-      default_font = nk_font_atlas_add_default(default_atlas, 13, &default_config);
-      nk_sdl_font_stash_end();
-
-      nk_sdl_font_stash_begin(&small_atlas);
-      small_font = nk_font_atlas_add_from_file(small_atlas, "assets/fonts/sm-snes.ttf", 7, &small_config);
-      nk_sdl_font_stash_end();
-
-      nk_sdl_font_stash_begin(&large_atlas);
-      large_font = nk_font_atlas_add_from_file(large_atlas, "assets/fonts/sm-large-alt.ttf", 14, &large_config);
-      nk_sdl_font_stash_end();
-
-      /*nk_style_load_all_cursors(ctx, atlas->cursors);*/
-      nk_style_set_font(ctx, &small_font->handle);
+  nkFontSetup();
+  nk_style_set_font(ctx, &small_font->handle);
   
 
   while (running) {
@@ -571,41 +876,36 @@ int main(int argc, char** argv) {
 
     if (g_paused) {
         /* GUI */
-        if (nk_begin(ctx, "Paused_List", nk_rect(48, 74, 160, 100), NK_WINDOW_BACKGROUND))
+        switch (currentMenu)
         {
-            nk_layout_row_dynamic(ctx, 15, 1);
-            nk_style_set_font(ctx, &small_font->handle);
-            nk_label(ctx, "Resume", NK_TEXT_CENTERED);
-            nk_label(ctx, "General", NK_TEXT_CENTERED);
-            nk_label(ctx, "Graphics", NK_TEXT_CENTERED);
-            nk_label(ctx, "Sound", NK_TEXT_CENTERED);
-            nk_label(ctx, "Features", NK_TEXT_CENTERED);
-            nk_label(ctx, "Save + Load", NK_TEXT_CENTERED);
-            nk_label(ctx, "Reset", NK_TEXT_CENTERED);
-            nk_label(ctx, "Quit", NK_TEXT_CENTERED);
-            /*nk_layout_row_dynamic(ctx, 40, 1);
-            static float font_size = 6;
-            nk_property_float(ctx, "Font size:", 0, &font_size, 100, 0.01, 0.01);
-
-            nk_sdl_font_stash_begin(&default_atlas);
-            default_font = nk_font_atlas_add_default(default_atlas, font_size, &default_config);
-            nk_sdl_font_stash_end();
-
-            nk_layout_row_dynamic(ctx, 20, 1);
-            nk_label(ctx, "ASCII only Test string... @ # ! $", NK_TEXT_LEFT);*/
+        case menuRoot:
+            nkRootMenu(ctx);
+            break;
+        case menuGeneral:
+            nkGeneralMenu(ctx);
+            break;
+        case menuGraphics:
+            nkGraphicsMenu(ctx);
+            break;
+        case menuSound:
+            nkSoundMenu(ctx);
+            break;
+        case menuFeatures:
+            nkFeaturesMenu(ctx);
+            break;
+        case menuSaveLoad:
+            nkSaveLoadMenu(ctx);
+            break;
+        case menuQuit:
+            running = false;
+            break;
+        default:
+            nkRootMenu(ctx);
+            break;
         }
-        nk_end(ctx);
-
-        nk_style_set_font(ctx, &large_font->handle);
-        if (nk_begin(ctx, "Paused", nk_rect(48, 50, 160, 100), NK_WINDOW_BACKGROUND))
-        {
-            nk_layout_row_dynamic(ctx, 15, 1);
-            nk_label(ctx, "Paused", NK_TEXT_CENTERED);
-        }
-        nk_end(ctx);
 
         SDL_SetRenderDrawColor(g_renderer, bg.r * 255, bg.g * 255, bg.b * 255, bg.a * 255);
-        //SDL_RenderClear(g_renderer);
+        SDL_RenderClear(g_renderer);
 
         nk_sdl_render(NK_ANTI_ALIASING_ON);
 
@@ -940,3 +1240,4 @@ static void SwitchDirectory(void) {
       pos--;
   }
 }
+
