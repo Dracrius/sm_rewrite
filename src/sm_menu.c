@@ -133,7 +133,9 @@ static void nkGeneralMenu()
         nk_style_set_font(ctx, &small_font->handle);
 
         if (nk_checkbox_label(ctx, "Autosave", &autosave)) { g_config.autosave = !g_config.autosave; }
+        nk_widget_disable_begin(ctx);
         if (nk_checkbox_label(ctx, "DisableFrameDelay", &disableFrameDelay)) { g_config.disable_frame_delay = !g_config.disable_frame_delay; }
+        nk_widget_disable_end(ctx);
 
         if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
             currentMenu = menuRoot;
@@ -166,6 +168,7 @@ static void nkGraphicsMenu()
         nk_layout_row_dynamic(ctx, 15, 1);
         nk_style_set_font(ctx, &small_font->handle);
 
+        nk_widget_disable_begin(ctx);
         nk_label(ctx, "Fullscreen", NK_TEXT_LEFT);
         static const char* fullscreenOptions[] = { "Windowed","Fullscreen","Fullscreen Windowed" };
         if (nk_combo_begin_label(ctx, fullscreenOptions[fullscreen], nk_vec2(nk_widget_width(ctx), 200))) {
@@ -196,6 +199,7 @@ static void nkGraphicsMenu()
         if (nk_checkbox_label(ctx, "IgnoreAspectRatio", &ignore_aspect_ratio)) { g_config.ignore_aspect_ratio = !g_config.ignore_aspect_ratio; }
         if (nk_checkbox_label(ctx, "NoSpriteLimits", &no_sprite_limits)) { g_config.no_sprite_limits = !g_config.no_sprite_limits; }
         if (nk_checkbox_label(ctx, "LinearFiltering", &linear_filtering)) { g_config.linear_filtering = !g_config.linear_filtering; }
+        nk_widget_disable_end(ctx);
 
         if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
             currentMenu = menuRoot;
@@ -225,6 +229,7 @@ static void nkSoundMenu()
         nk_layout_row_dynamic(ctx, 15, 1);
         nk_style_set_font(ctx, &small_font->handle);
 
+        nk_widget_disable_begin(ctx);
         if (nk_checkbox_label(ctx, "EnableAudio", &enable_audio)) { g_config.enable_audio = !g_config.enable_audio; }
         nk_label(ctx, "AudioFreq", NK_TEXT_LEFT);
         static const int freqOptions[] = { 48000,44100,32000,22050,11025};
@@ -277,6 +282,7 @@ static void nkSoundMenu()
             nk_combo_end(ctx);
         }
         if (nk_checkbox_label(ctx, "EnableMSU", &enable_msu)) { g_config.enable_msu = !g_config.enable_msu; }
+        nk_widget_disable_end(ctx);
 
         if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
             currentMenu = menuRoot;
