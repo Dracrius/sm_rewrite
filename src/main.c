@@ -26,7 +26,7 @@
 #include "switch_impl.h"
 #endif
 
-#include "sm_menu.c"
+#include "nkMenu.c"
 
 static void playAudio(Snes *snes, SDL_AudioDeviceID device, int16_t *audioBuffer);
 static void renderScreen(Snes *snes, SDL_Renderer *renderer, SDL_Texture *texture);
@@ -462,11 +462,12 @@ int main(int argc, char** argv) {
   bool has_bug_in_title = false;
    
   /* GUI */
-  nkMenuInit(g_window, g_renderer);
+  nk_console* console = nkMenuInit(g_window, g_renderer);
 
   while (running) {
     SDL_Event event;
     nk_input_begin(ctx);
+    nk_gamepad_update((struct nk_gamepads*)nk_console_get_gamepads(console));
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
       case SDL_CONTROLLERDEVICEADDED:
@@ -504,7 +505,9 @@ int main(int argc, char** argv) {
         running = false;
         break;
       }
+
       nk_sdl_handle_event(&event);
+      nk_gamepad_sdl_handle_event((struct nk_gamepads*)nk_console_get_gamepads(console), &event);
     }
     nk_input_end(ctx);
 
@@ -514,15 +517,17 @@ int main(int argc, char** argv) {
         SDL_PauseAudioDevice(g_audio_device, audiopaused);
     }
 
-
+    
 
     if (g_paused) {
         /* GUI */
-        switch (currentMenu)
+        nkRootMenu();
+        g_paused = !unPause;
+
+        if(currentMenu == menuQuit) { running = false; }
+        /*switch (currentMenu)
         {
         case menuRoot:
-            if (nkRootMenu())
-                g_paused = false;
             break;
         case menuGeneral:
             nkGeneralMenu();
@@ -547,9 +552,8 @@ int main(int argc, char** argv) {
             if (nkRootMenu())
                 g_paused = false;
             break;
-        }
+        }*/
 
-        SDL_RenderClear(g_renderer);
         nk_sdl_render(NK_ANTI_ALIASING_ON);
         SDL_RenderPresent(g_renderer);
 
@@ -618,6 +622,7 @@ int main(int argc, char** argv) {
 #ifdef __SWITCH__
   SwitchImpl_Exit();
 #endif
+  nkMenuCleanup();
   nk_sdl_shutdown();
   SDL_DestroyWindow(window);
   SDL_Quit();
