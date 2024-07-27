@@ -145,8 +145,8 @@ static void nkGeneralMenu()
     nk_layout_row_dynamic(ctx, 15, 1);
     nk_style_set_font(ctx, &small_font->handle);
 
-    nk_console_checkbox(general, "Autosave", &g_config.autosave)->height = 15;
-    nk_console_checkbox(general, "DisableFrameDelay", &g_config.disable_frame_delay)->disabled = nk_true;
+    //nk_console_checkbox(general, "Autosave", &g_config.autosave)->height = 15;
+    //nk_console_checkbox(general, "DisableFrameDelay", &g_config.disable_frame_delay)->disabled = nk_true;
     //nk_console_checkbox(general, "Hide Graphics and Sound", &hideGraphicsSound)->height = 15;
     nk_console_button_onclick(general, "Back", nk_console_button_back)->height = 15;
 }
@@ -198,7 +198,7 @@ static void nkGraphicsMenu()
     if (nk_checkbox_label(ctx, "LinearFiltering", &linear_filtering)) { g_config.linear_filtering = !g_config.linear_filtering; }
     nk_widget_disable_end(ctx);
 
-    if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+    if (nk_button_label(ctx, "Back")) {
         currentMenu = menuRoot;
     };
 }
@@ -269,7 +269,7 @@ static void nkSoundMenu()
     if (nk_checkbox_label(ctx, "EnableMSU", &enable_msu)) { g_config.enable_msu = !g_config.enable_msu; }
     nk_widget_disable_end(ctx);
 
-    if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+    if (nk_button_label(ctx, "Back")) {
         currentMenu = menuRoot;
     };
 }
@@ -290,7 +290,7 @@ static void nkFeaturesMenu()
     nk_console_set_onchange(nk_console_checkbox(features, "ShinesparkControl", &shinesparkControl), nkUpdateFeature);
     nk_console_set_onchange(nk_console_checkbox(features, "ShinesparkHealth", &shinesparkHealth), nkUpdateFeature);
     nk_console_set_onchange(nk_console_checkbox(features, "ChainSpark", &chainSpark), nkUpdateFeature);
-    nk_console_slider_int(features, "LowHealthBeep", 0, &g_config.low_beep, 100, 1);
+    //nk_console_slider_int(features, "LowHealthBeep", 0, &g_config.low_beep, 100, 1);
     nk_console_set_onchange(nk_console_checkbox(features, "PowerBombReveal", &powerBombReveal), nkUpdateFeature);
     nk_console_set_onchange(nk_console_checkbox(features, "InstantPickups", &instantPickups), nkUpdateFeature);
     nk_console_button_onclick(features, "Back", nk_console_button_back)->height = 15;
@@ -309,7 +309,7 @@ static void nkSaveLoadMenu()
     nk_console_button_onclick(saveLoad, "Back", nk_console_button_back)->height = 15;
 }
 
-nk_console* nkMenuInit(static SDL_Window* g_window, static SDL_Renderer* g_renderer)
+nk_console* nkMenuInit(SDL_Window* g_window, SDL_Renderer* g_renderer)
 {
     ctx = nk_sdl_init(g_window, g_renderer);
     console = nk_console_init(ctx);
@@ -318,7 +318,7 @@ nk_console* nkMenuInit(static SDL_Window* g_window, static SDL_Renderer* g_rende
     nkFontSetup();
     nk_style_set_font(ctx, &small_font->handle);
 
-    resume = nk_console_button_onclick(console, "Resume", nkRootButtons)->height = 15;
+    resume = nk_console_button_onclick(console, "Resume", nkRootButtons);
     general = nk_console_button(console, "General");
     {
         nkGeneralMenu();
@@ -339,14 +339,17 @@ nk_console* nkMenuInit(static SDL_Window* g_window, static SDL_Renderer* g_rende
     {
         nkSaveLoadMenu();
     }
-    reset =  nk_console_button_onclick(console, "Reset", nkRootButtons)->height = 15;
-    quit = nk_console_button_onclick(console, "Quit", nkRootButtons)->height = 15;
+    reset =  nk_console_button_onclick(console, "Reset", nkRootButtons);
+    quit = nk_console_button_onclick(console, "Quit", nkRootButtons);
 
+    nk_console_set_height(resume, 15);
     nk_console_set_height(general, 15);
     nk_console_set_height(graphics, 15);
     nk_console_set_height(sound, 15);
     nk_console_set_height(features, 15);
     nk_console_set_height(saveLoad, 15);
+    nk_console_set_height(reset, 15);
+    nk_console_set_height(quit, 15);
 
     return console;
 }
