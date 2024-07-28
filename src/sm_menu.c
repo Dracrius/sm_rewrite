@@ -67,7 +67,7 @@ static void nkFontSetup()
     nk_sdl_font_stash_end();
 }
 
-static void nkMenuInit(static SDL_Window* g_window, static SDL_Renderer* g_renderer)
+static void nkMenuInit(SDL_Window* g_window, SDL_Renderer* g_renderer)
 {
     ctx = nk_sdl_init(g_window, g_renderer);
 
@@ -82,29 +82,29 @@ static bool nkRootMenu()
     {
         nk_layout_row_dynamic(ctx, 15, 1);
         nk_style_set_font(ctx, &small_font->handle);
-        if (nk_button_label(ctx, "Resume", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Resume")) {
             resume = true;
         };
-        if (nk_button_label(ctx, "General", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "General")) {
             currentMenu = menuGeneral;
         };
-        if (nk_button_label(ctx, "Graphics", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Graphics")) {
             currentMenu = menuGraphics;
         };
-        if (nk_button_label(ctx, "Sound", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Sound")) {
             currentMenu = menuSound;
         };
-        if (nk_button_label(ctx, "Features", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Features")) {
             currentMenu = menuFeatures;
         };
-        if (nk_button_label(ctx, "Save + Load", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Save + Load")) {
             currentMenu = menuSaveLoad;
         };
-        if (nk_button_label(ctx, "Reset", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Reset")) {
             RtlReset(1);
             resume = true;
         };
-        if (nk_button_label(ctx, "Quit", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Quit")) {
             currentMenu = menuQuit;
         };
     }
@@ -137,7 +137,7 @@ static void nkGeneralMenu()
         if (nk_checkbox_label(ctx, "DisableFrameDelay", &disableFrameDelay)) { g_config.disable_frame_delay = !g_config.disable_frame_delay; }
         nk_widget_disable_end(ctx);
 
-        if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Back")) {
             currentMenu = menuRoot;
         };
     }
@@ -201,7 +201,7 @@ static void nkGraphicsMenu()
         if (nk_checkbox_label(ctx, "LinearFiltering", &linear_filtering)) { g_config.linear_filtering = !g_config.linear_filtering; }
         nk_widget_disable_end(ctx);
 
-        if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Back")) {
             currentMenu = menuRoot;
         };
     }
@@ -284,7 +284,7 @@ static void nkSoundMenu()
         if (nk_checkbox_label(ctx, "EnableMSU", &enable_msu)) { g_config.enable_msu = !g_config.enable_msu; }
         nk_widget_disable_end(ctx);
 
-        if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Back")) {
             currentMenu = menuRoot;
         };
     }
@@ -317,14 +317,14 @@ static void nkFeaturesMenu()
         if (nk_checkbox_label(ctx, "ShinesparkControl", &shinesparkControl)) { enhanced_features0 ^= kFeatures0_ShinesparkControl; }
         if (nk_checkbox_label(ctx, "ShinesparkHealth", &shinesparkHealth)) { enhanced_features0 ^= kFeatures0_ShinesparkHealth; }
         if (nk_checkbox_label(ctx, "ChainSpark", &chainSpark)) { enhanced_features0 ^= kFeatures0_ChainSpark; }
-        nk_layout_row_dynamic(ctx, 15, 2);
-        nk_label(ctx, "LowHealthBeep", NK_TEXT_ALIGN_LEFT);
-        nk_slider_int(ctx, 0, &g_config.low_beep, 100, 1);
-        nk_layout_row_dynamic(ctx, 15, 1);
+        //nk_layout_row_dynamic(ctx, 15, 2);
+        //nk_label(ctx, "LowHealthBeep", NK_TEXT_ALIGN_LEFT);
+        //nk_slider_int(ctx, 0, &g_config.low_beep, 100, 1);
+        //nk_layout_row_dynamic(ctx, 15, 1);
         if (nk_checkbox_label(ctx, "PowerBombReveal", &powerBombReveal)) { enhanced_features0 ^= kFeatures0_PowerBombReveal; }
         if (nk_checkbox_label(ctx, "InstantPickups", &instantPickups)) { enhanced_features0 ^= kFeatures0_InstantPickups; }
 
-        if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Back")) {
             currentMenu = menuRoot;
         };
     }
@@ -358,19 +358,19 @@ static bool nkSaveLoadMenu()
                 }
             nk_combo_end(ctx);
         }
-        if (nk_button_label(ctx, "Save", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Save")) {
             RtlSaveLoad(kSaveLoad_Save, saveSlotSelected);
             resume = true;
         };
-        if (nk_button_label(ctx, "Load", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Load")) {
             RtlSaveLoad(kSaveLoad_Load, saveSlotSelected);
             resume = true;
         };
-        if (nk_button_label(ctx, "Replay", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Replay")) {
             RtlSaveLoad(kSaveLoad_Replay, saveSlotSelected);
             resume = true;
         };
-        if (nk_button_label(ctx, "Back", NK_TEXT_CENTERED)) {
+        if (nk_button_label(ctx, "Back")) {
             currentMenu = menuRoot;
         };
     }
