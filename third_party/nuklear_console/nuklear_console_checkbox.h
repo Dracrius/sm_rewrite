@@ -40,7 +40,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
     // Allow changing the checkbox value.
     nk_bool active = nk_false;
     if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
-        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
+        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
             if (data->value_bool != NULL) {
                 *data->value_bool = !*data->value_bool;
                 if (console->onchange != NULL) {

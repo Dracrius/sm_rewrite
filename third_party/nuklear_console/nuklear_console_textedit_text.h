@@ -43,7 +43,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
     // Process checking the up/down switching in widgets before processing showing the widget itself
     if (nk_console_is_active_widget(widget)) {
         // Allow using ENTER to go back
-        if (nk_console_button_pushed(widget, NK_GAMEPAD_BUTTON_A)) {
+        if (nk_console_button_pushed(widget, NK_GAMEPAD_BUTTON_B)) {
             nk_console_get_top(widget)->input_processed = nk_true;
             nk_console_textedit_button_back_click(widget);
             return nk_rect(0, 0, 0, 0);

@@ -145,9 +145,9 @@ static void nkGeneralMenu()
     nk_layout_row_dynamic(ctx, 15, 1);
     nk_style_set_font(ctx, &small_font->handle);
 
-    //nk_console_checkbox(general, "Autosave", &g_config.autosave)->height = 15;
-    //nk_console_checkbox(general, "DisableFrameDelay", &g_config.disable_frame_delay)->disabled = nk_true;
-    //nk_console_checkbox(general, "Hide Graphics and Sound", &hideGraphicsSound)->height = 15;
+    nk_console_checkbox(general, "Autosave", (int*)&g_config.autosave)->height = 15;
+    nk_console_checkbox(general, "DisableFrameDelay", (int*)&g_config.disable_frame_delay)->disabled = nk_true;
+    nk_console_checkbox(general, "Hide Graphics and Sound", (int*)&hideGraphicsSound)->height = 15;
     nk_console_button_onclick(general, "Back", nk_console_button_back)->height = 15;
 }
 
@@ -290,7 +290,7 @@ static void nkFeaturesMenu()
     nk_console_set_onchange(nk_console_checkbox(features, "ShinesparkControl", &shinesparkControl), nkUpdateFeature);
     nk_console_set_onchange(nk_console_checkbox(features, "ShinesparkHealth", &shinesparkHealth), nkUpdateFeature);
     nk_console_set_onchange(nk_console_checkbox(features, "ChainSpark", &chainSpark), nkUpdateFeature);
-    //nk_console_slider_int(features, "LowHealthBeep", 0, &g_config.low_beep, 100, 1);
+    nk_console_slider_int(features, "LowHealthBeep", 0, (int*)&g_config.low_beep, 100, 1);
     nk_console_set_onchange(nk_console_checkbox(features, "PowerBombReveal", &powerBombReveal), nkUpdateFeature);
     nk_console_set_onchange(nk_console_checkbox(features, "InstantPickups", &instantPickups), nkUpdateFeature);
     nk_console_button_onclick(features, "Back", nk_console_button_back)->height = 15;
