@@ -64,6 +64,7 @@ nk_console* saveLoad;
 nk_console* reset;
 nk_console* quit;
 
+nk_bool autosave;
 int ammoRechargeStation;
 int shinesparkControl;
 int shinesparkHealth;
@@ -104,22 +105,22 @@ void nkRootButtons(struct nk_console* button) {
 }
 
 void nkUpdateFeature(struct nk_console* checkbox) {
-    if (strcmp(nk_console_get_label(checkbox), "AmmoRechargeStation") == 0) {
+    if (strcmp(nk_console_get_label(checkbox), "Ammo Recharge Station") == 0) {
         enhanced_features0 ^= kFeatures0_AmmoRechargeStation;
     }
-    else if (strcmp(nk_console_get_label(checkbox), "ShinesparkControl") == 0) {
+    else if (strcmp(nk_console_get_label(checkbox), "Shinespark Control") == 0) {
         enhanced_features0 ^= kFeatures0_ShinesparkControl;
     }
-    else if (strcmp(nk_console_get_label(checkbox), "ShinesparkHealth") == 0) {
+    else if (strcmp(nk_console_get_label(checkbox), "Shinespark Health") == 0) {
         enhanced_features0 ^= kFeatures0_ShinesparkHealth;
     }
-    else if (strcmp(nk_console_get_label(checkbox), "ChainSpark") == 0) {
+    else if (strcmp(nk_console_get_label(checkbox), "Chain Spark") == 0) {
         enhanced_features0 ^= kFeatures0_ChainSpark;
     }
-    else if (strcmp(nk_console_get_label(checkbox), "PowerBombReveal") == 0) {
+    else if (strcmp(nk_console_get_label(checkbox), "Power Bomb Reveal") == 0) {
         enhanced_features0 ^= kFeatures0_PowerBombReveal;
     }
-    else if (strcmp(nk_console_get_label(checkbox), "InstantPickups") == 0) {
+    else if (strcmp(nk_console_get_label(checkbox), "Instant Pickups") == 0) {
         enhanced_features0 ^= kFeatures0_InstantPickups;
     }
 
@@ -140,14 +141,20 @@ void nkSaveLoad(struct nk_console* button) {
     }
 }
 
+void nkCheckboxToggle(struct nk_console* checkbox)
+{
+    if (strcmp(nk_console_get_label(checkbox), "Autosave") == 0) {
+        g_config.autosave != g_config.autosave;
+    }
+}
+
 static void nkGeneralMenu()
 {
-    nk_layout_row_dynamic(ctx, 15, 1);
     nk_style_set_font(ctx, &small_font->handle);
+    autosave = g_config.autosave;
 
-    nk_console_checkbox(general, "Autosave", (int*)&g_config.autosave)->height = 15;
+    nk_console_set_onchange(nk_console_checkbox(general, "Autosave", &autosave), nkCheckboxToggle);
     nk_console_checkbox(general, "DisableFrameDelay", (int*)&g_config.disable_frame_delay)->disabled = nk_true;
-    nk_console_checkbox(general, "Hide Graphics and Sound", (int*)&hideGraphicsSound)->height = 15;
     nk_console_button_onclick(general, "Back", nk_console_button_back)->height = 15;
 }
 
@@ -283,22 +290,20 @@ static void nkFeaturesMenu()
     powerBombReveal = enhanced_features0 & kFeatures0_PowerBombReveal;
     instantPickups = enhanced_features0 & kFeatures0_InstantPickups;
 
-    nk_layout_row_dynamic(ctx, 15, 1);
     nk_style_set_font(ctx, &small_font->handle);
 
-    nk_console_set_onchange(nk_console_checkbox(features, "AmmoRechargeStation", &ammoRechargeStation), nkUpdateFeature);
-    nk_console_set_onchange(nk_console_checkbox(features, "ShinesparkControl", &shinesparkControl), nkUpdateFeature);
-    nk_console_set_onchange(nk_console_checkbox(features, "ShinesparkHealth", &shinesparkHealth), nkUpdateFeature);
-    nk_console_set_onchange(nk_console_checkbox(features, "ChainSpark", &chainSpark), nkUpdateFeature);
-    nk_console_slider_int(features, "LowHealthBeep", 0, (int*)&g_config.low_beep, 100, 1);
-    nk_console_set_onchange(nk_console_checkbox(features, "PowerBombReveal", &powerBombReveal), nkUpdateFeature);
-    nk_console_set_onchange(nk_console_checkbox(features, "InstantPickups", &instantPickups), nkUpdateFeature);
+    nk_console_set_onchange(nk_console_checkbox(features, "Ammo Recharge Station", &ammoRechargeStation), nkUpdateFeature);
+    nk_console_set_onchange(nk_console_checkbox(features, "Shinespark Control", &shinesparkControl), nkUpdateFeature);
+    nk_console_set_onchange(nk_console_checkbox(features, "Shinespark Health", &shinesparkHealth), nkUpdateFeature);
+    nk_console_set_onchange(nk_console_checkbox(features, "Chain Spark", &chainSpark), nkUpdateFeature);
+    nk_console_slider_int(features, "Low Health Beep", 0, (int*)&g_config.low_beep, 100, 1);
+    nk_console_set_onchange(nk_console_checkbox(features, "Power Bomb Reveal", &powerBombReveal), nkUpdateFeature);
+    nk_console_set_onchange(nk_console_checkbox(features, "Instant Pickups", &instantPickups), nkUpdateFeature);
     nk_console_button_onclick(features, "Back", nk_console_button_back)->height = 15;
 }
 
 static void nkSaveLoadMenu()
 {
-    nk_layout_row_dynamic(ctx, 15, 1);
     nk_style_set_font(ctx, &small_font->handle);
 
     nk_console_property_int(saveLoad, "Save Slot:", 0, &saveSlotSelected, 10, 1, 1)->height = 15;
@@ -319,10 +324,10 @@ nk_console* nkMenuInit(SDL_Window* g_window, SDL_Renderer* g_renderer)
     nk_style_set_font(ctx, &small_font->handle);
 
     resume = nk_console_button_onclick(console, "Resume", nkRootButtons);
-    general = nk_console_button(console, "General");
-    {
-        nkGeneralMenu();
-    }
+    //general = nk_console_button(console, "General");
+    //{
+    //    nkGeneralMenu();
+    //}
     //graphics = nk_console_button(console, "Graphics");
     //{
     //    nkGraphicsMenu();
@@ -361,11 +366,6 @@ void nkMenuCleanup() {
 
 static bool nkMenuRender()
 {
-    /*char widgetIndex[10];
-    sprintf(widgetIndex, "Index: %d", nk_console_get_widget_index(nk_console_get_active_widget(console)));
-
-    puts(widgetIndex);*/
-
     unPause = false;
     nk_console_render(console);
     return unPause;
@@ -375,68 +375,17 @@ static bool nkMenuRender()
 
 bool nkRootMenu()
 {
-    if (nk_begin(ctx, "Paused_List", nk_rect(28, 74, 200, 100), NK_WINDOW_BACKGROUND))
+    if (nk_begin(ctx, "Paused_List", nk_rect(28, 72, 200, 104), NK_WINDOW_NO_SCROLLBAR))
     {
         nk_style_set_font(ctx, &small_font->handle);
         unPause = nkMenuRender();
     }
     nk_end(ctx);
 
-    char* menuTitle = "Paused";
-
-    /*if (nk_console_get_active_widget(console) == general)
-    {
-        menuTitle = "General";
-    }
-    if (nk_console_is_active_widget(graphics))
-    {
-        menuTitle = "Graphics";
-    }
-    if (nk_console_is_active_widget(sound))
-    {
-        menuTitle = "Sound";
-    }
-    if (nk_console_is_active_widget(features))
-    {
-        menuTitle = "Features";
-    }
-    if (nk_console_is_active_widget(saveLoad))
-    {
-        menuTitle = "Save and Load";
-    }
-    else
-    {
-        menuTitle = "Paused";
-    }*/
-
-
-    /*switch (currentMenu)
-    {
-    case menuRoot:
-        menuTitle = "Paused";
-        break;
-    case menuGeneral:
-        menuTitle = "General";
-        break;
-    case menuGraphics:
-        menuTitle = "Graphics";
-        break;
-    case menuSound:
-        menuTitle = "Sound";
-        break;
-    case menuFeatures:
-        menuTitle = "Features";
-        break;
-    case menuSaveLoad:
-        menuTitle = "Save and Load";
-        break;
-    default:
-        menuTitle = "Paused";
-        break;
-    }*/
+    char* menuTitle = " Paused";
 
     nk_style_set_font(ctx, &large_font->handle);
-    if (nk_begin(ctx, menuTitle, nk_rect(28, 50, 200, 40), NK_WINDOW_BACKGROUND))
+    if (nk_begin(ctx, menuTitle, nk_rect(28, 48, 200, 40), NK_WINDOW_BACKGROUND))
     {
         nk_layout_row_dynamic(ctx, 15, 1);
         nk_label(ctx, menuTitle, NK_TEXT_CENTERED);
